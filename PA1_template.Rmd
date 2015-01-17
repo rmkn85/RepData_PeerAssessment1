@@ -1,20 +1,101 @@
 # Reproducible Research: Peer Assessment 1
 
-
 ## Loading and preprocessing the data
 
+Extract the original activity.zip file, to get activity.csv
+```{r echo=TRUE}
+unzip("activity.zip")
+```
+
+Load the data
+```{r echo=TRUE}
+data <- read.csv("activity.csv", na.string="NA", colClasses=c("integer", "Date", "integer"))
+```
+
+Process/transform the data
+```{r echo=TRUE}
+data$date <- as.Date(data$date, format = "%Y-%m-%d")
+data$interval <- formatC(data$interval, width = 4, format = "d", flag = "0")
+datetime <- strptime(paste(data$date,data$interval), "%F %H%M")
+data <- cbind(data,datetime)
+```
 
 
 ## What is mean total number of steps taken per day?
 
+Histogram of the total number of steps taken each day
+```{r echo=TRUE}
+data_steps_sum <- with(data, aggregate(list(Sum_Steps = steps), by=list(Date = date), FUN=sum))
+hist(data_steps_sum$Sum_Steps, main = "Total Steps Taken Each Day", xlab = "Total Steps", ylab = "Days")
+```
 
+Mean total number of steps taken per Day
+```{r echo=TRUE}
+data_steps_mean <- with(data, aggregate(list(Mean_Steps = steps), by=list(Date = date), FUN=mean))
+print(data_steps_mean)
+```
+
+Median total number of steps taken per Day
+```{r echo=TRUE}
+data_steps_median <- with(data, aggregate(list(Median_Steps = steps), by=list(Date = date), FUN=median, na.rm=TRUE))
+print(data_steps_median)
+```
 
 ## What is the average daily activity pattern?
 
+Time series plot of the 5-minute interval and the average number of steps taken, averaged across all days
+```{r echo=TRUE}
+data_interval_mean <- with(data, aggregate(list(Mean_Steps = steps), by=list(Interval = interval), FUN=mean, na.rm=TRUE))
+data_interval_mean_plot <- with(data_interval_mean, plot(Interval, Mean_Steps, type="l"))
+```
 
+Which 5-minute interval, on average across all the days in the dataset, contains the maximum number of steps?
+```{r echo=TRUE}
+data[order(data_interval_mean$Mean_Steps, decreasing=TRUE)[1],]$interval
+```
 
 ## Imputing missing values
 
+Total number of missing values in the dataset
+```{r echo=TRUE}
+missing_steps = matrix(is.na(data$steps))
+missing_steps_count = sum(missing_steps)
+```
 
+New dataset that is equal to the original dataset but with the missing data filled in
+```{r echo=TRUE}
+new_data = data
+new_data[missing_steps,]$steps = data_interval_mean$Mean_Steps
+```
+
+Histogram of the total number of steps taken each day
+```{r echo=TRUE}
+new_data_steps_sum <- with(new_data, aggregate(list(Sum_Steps = steps), by=list(Date = date), FUN=sum))
+hist(new_data_steps_sum$Sum_Steps, main = "Total Steps Taken Each Day", xlab = "Total Steps", ylab = "Days")
+```
+
+New mean total number of steps taken per Day
+```{r echo=TRUE}
+new_data_steps_mean <- with(new_data, aggregate(list(Mean_Steps = steps), by=list(Date = date), FUN=mean, na.rm=TRUE))
+print(new_data_steps_mean)
+```
+
+New median total number of steps taken per Day
+```{r echo=TRUE}
+new_data_steps_median <- with(new_data, aggregate(list(Median_Steps = steps), by=list(Date = date), FUN=median, na.rm=TRUE))
+print(new_data_steps_median)
+```
 
 ## Are there differences in activity patterns between weekdays and weekends?
+
+New factor variable in the dataset with two levels -- "weekday" and "weekend" indicating whether a given date is a weekday or weekend day
+```{r echo=TRUE}
+weekend_dates <- factor(weekdays(new_data$date) %in% c("Saturday", "Sunday"), labels = c("weekday", "weekend"))
+new_data = cbind(new_data, weekend_dates)
+```
+
+Panel plot containing a time series plot (i.e. type = "l") of the 5-minute interval (x-axis) and the average number of steps taken, averaged across all weekday days or weekend days (y-axis)
+```{r}
+new_data_interval_mean <- with(new_data, aggregate(list(Mean_Steps = steps), by=list(Interval = interval), FUN=mean, na.rm=TRUE))
+new_data_interval_mean_plot <- with(data_interval_mean, plot(Interval, Mean_Steps, type="l"))
+```
