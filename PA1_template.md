@@ -30,7 +30,7 @@ Histogram of the total number of steps taken each day
 
 ```r
 data_steps_sum <- with(data, aggregate(list(Sum_Steps = steps), by=list(Date = date), FUN=sum))
-hist(data_steps_sum$Sum_Steps, main = "Total Steps Taken Each Day", xlab = "Total Steps", ylab = "Days")
+plot(data_steps_sum, type = "h", main = "Total Steps Taken Each Day", xlab = "Date", ylab = "Total Steps")
 ```
 
 ![plot of chunk unnamed-chunk-4](figure/unnamed-chunk-4.png) 
@@ -220,7 +220,7 @@ Histogram of the total number of steps taken each day
 
 ```r
 new_data_steps_sum <- with(new_data, aggregate(list(Sum_Steps = steps), by=list(Date = date), FUN=sum))
-hist(new_data_steps_sum$Sum_Steps, main = "Total Steps Taken Each Day", xlab = "Total Steps", ylab = "Days")
+plot(new_data_steps_sum, type = "h", main = "Total Steps Taken Each Day - after missing values were imputed", xlab = "Date", ylab = "Total Steps")
 ```
 
 ![plot of chunk unnamed-chunk-11](figure/unnamed-chunk-11.png) 
@@ -374,15 +374,19 @@ print(new_data_steps_median)
 New factor variable in the dataset with two levels -- "weekday" and "weekend" indicating whether a given date is a weekday or weekend day
 
 ```r
-weekend_dates <- factor(weekdays(new_data$date) %in% c("Saturday", "Sunday"), labels = c("weekday", "weekend"))
-new_data = cbind(new_data, weekend_dates)
+day_type <- factor(weekdays(new_data$date) %in% c("Saturday", "Sunday"), labels = c("weekday", "weekend"))
+new_data = cbind(new_data, day_type)
 ```
 
 Panel plot containing a time series plot (i.e. type = "l") of the 5-minute interval (x-axis) and the average number of steps taken, averaged across all weekday days or weekend days (y-axis)
 
 ```r
-new_data_interval_mean <- with(new_data, aggregate(list(Mean_Steps = steps), by=list(Interval = interval), FUN=mean, na.rm=TRUE))
-new_data_interval_mean_plot <- with(data_interval_mean, plot(Interval, Mean_Steps, type="l"))
+new_data_interval_mean_weekday <- with(new_data[new_data$day_type=="weekday",], aggregate(list(Mean_Steps = steps), by=list(Interval = interval), FUN=mean, na.rm=TRUE))
+new_data_interval_mean_weekend <- with(new_data[new_data$day_type=="weekend",], aggregate(list(Mean_Steps = steps), by=list(Interval = interval), FUN=mean, na.rm=TRUE))
+
+plot(new_data_interval_mean_weekday, type="l", col="red")
+lines(new_data_interval_mean_weekend, col="green")
+legend(x = 235, legend="red - weekday, green - weekend")
 ```
 
 ![plot of chunk unnamed-chunk-15](figure/unnamed-chunk-15.png) 
